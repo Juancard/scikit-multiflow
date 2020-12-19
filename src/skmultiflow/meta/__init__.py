@@ -17,6 +17,7 @@ from .learn_pp import LearnPPClassifier
 from .learn_nse import LearnPPNSEClassifier
 from .accuracy_weighted_ensemble import AccuracyWeightedEnsembleClassifier
 from .dynamic_weighted_majority import DynamicWeightedMajorityClassifier
+from .dynamic_weighted_majority_ml import DynamicWeightedMajorityMultiLabel
 from .additive_expert_ensemble import AdditiveExpertEnsembleClassifier
 from .online_boosting import OnlineBoostingClassifier
 from .online_adac2 import OnlineAdaC2Classifier
@@ -48,7 +49,8 @@ __all__ = ["AdaptiveRandomForestClassifier", "AdaptiveRandomForestRegressor",
            "OzaBaggingADWINClassifier", "ClassifierChain", "ProbabilisticClassifierChain",
            "MonteCarloClassifierChain", "RegressorChain", "MultiOutputLearner",
            "LearnPPClassifier", "LearnPPNSEClassifier", "AccuracyWeightedEnsembleClassifier",
-           "DynamicWeightedMajorityClassifier", "AdditiveExpertEnsembleClassifier",
+           "DynamicWeightedMajorityClassifier", "DynamicWeightedMajorityMultiLabel",
+           "AdditiveExpertEnsembleClassifier",
            "OnlineSMOTEBaggingClassifier", "OnlineRUSBoostClassifier", "OnlineCSB2Classifier",
            "OnlineAdaC2Classifier", "OnlineUnderOverBaggingClassifier", "OnlineBoostingClassifier",
            "StreamingRandomPatchesClassifier",
