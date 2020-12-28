@@ -8,17 +8,8 @@ from skmultiflow.lazy import KNNADWINClassifier
 from skmultiflow.utils import check_random_state, get_dimensions
 
 
-def OzaBagging(base_estimator=KNNADWINClassifier(), n_estimators=10,
-               random_state=None):  # pragma: no cover
-    warnings.warn("'OzaBagging' has been renamed to 'OzaBaggingClassifier' in v0.5.0.\n"
-                  "The old name will be removed in v0.7.0", category=FutureWarning)
-    return OzaBaggingClassifier(base_estimator=base_estimator,
-                                n_estimators=n_estimators,
-                                random_state=random_state)
-
-
-class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
-    """ Oza Bagging ensemble classifier.
+class OzaBaggingMLClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
+    """ Oza Bagging ML ensemble classifier.
 
     Parameters
     ----------
@@ -67,13 +58,13 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
     Examples
     --------
     >>> # Imports
-    >>> from skmultiflow.meta import OzaBaggingClassifier
+    >>> from skmultiflow.meta import OzaBaggingClassifierML
     >>> from skmultiflow.lazy import KNNClassifier
     >>> from skmultiflow.data import SEAGenerator
     >>> # Setting up the stream
     >>> stream = SEAGenerator(1, noise_percentage=0.07)
     >>> # Setting up the OzaBagging classifier to work with KNN as base estimator
-    >>> clf = OzaBaggingClassifier(base_estimator=KNNClassifier(n_neighbors=8,
+    >>> clf = OzaBaggingClassifierML(base_estimator=KNNClassifier(n_neighbors=8,
     ...     max_window_size=2000, leaf_size=30), n_estimators=2)
     >>> # Keeping track of sample count and correct prediction count
     >>> sample_count = 0
@@ -93,7 +84,7 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
     >>> # Displaying the results
     >>> print(str(sample_count) + ' samples analyzed.')
     2000 samples analyzed.
-    >>> print('OzaBaggingClassifier performance: ' + str(corrects / sample_count))
+    >>> print('OzaBaggingClassifierML performance: ' + str(corrects / sample_count))
     OzaBagging classifier performance: 0.9095
 
     """
@@ -111,8 +102,8 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
         self.__configure()
 
     def __configure(self):
-        if hasattr(self.base_estimator, "reset"):
-            self.base_estimator.reset()
+        # if hasattr(self.base_estimator, "reset"):
+        # self.base_estimator.reset()
         self.actual_n_estimators = self.n_estimators
         self.ensemble = [cp.deepcopy(self.base_estimator)
                          for _ in range(self.actual_n_estimators)]
@@ -151,7 +142,7 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
 
         Returns
         -------
-        OzaBaggingClassifier
+        OzaBaggingClassifierML
             self
 
         Notes
@@ -172,7 +163,7 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
                 self.classes = classes
 
         if self.classes is not None and classes is not None:
-            if set(self.classes) == set(classes):
+            if set(map(tuple, self.classes)) == set(map(tuple, classes)):
                 pass
             else:
                 raise ValueError("The classes passed to the partial_fit function"
@@ -186,7 +177,11 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
                 if k > 0:
                     for b in range(k):
                         self.ensemble[i].partial_fit(
-                            [X[j]], [y[j]], classes, sample_weight)
+                            np.array([X[j]]),
+                            np.array([y[j]]),
+                            classes,
+                            sample_weight
+                        )
         return self
 
     def __adjust_ensemble_size(self):
@@ -220,7 +215,7 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
         if proba is None:
             return None
         for i in range(r):
-            predictions.append(np.argmax(proba[i]))
+            predictions.append((proba[i] > 0.5).astype(int))
         return np.asarray(predictions)
 
     def predict_proba(self, X):
@@ -246,36 +241,32 @@ class OzaBaggingClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
         """
         proba = []
         r, c = get_dimensions(X)
-        try:
-            for i in range(self.actual_n_estimators):
-                partial_proba = self.ensemble[i].predict_proba(X)
-                if len(partial_proba[0]) > max(self.classes) + 1:
-                    raise ValueError("The number of classes in the base learner "
-                                     "is larger than in the ensemble.")
+        # try:
+        # print("*" * 30)
+        for i in range(self.actual_n_estimators):
+            partial_proba = self.ensemble[i].predict_proba(X)
+            # print(i, '\n\t', proba, '\n\t', partial_proba)
 
-                if len(proba) < 1:
-                    for n in range(r):
-                        proba.append([0.0 for _ in partial_proba[n]])
+            # if len(partial_proba[0]) > max(self.classes) + 1:
+            # raise ValueError("The number of classes in the base learner "
+            # "is larger than in the ensemble.")
 
+            if len(proba) < 1:
                 for n in range(r):
-                    for k in range(len(partial_proba[n])):
-                        try:
-                            proba[n][k] += partial_proba[n][k]
-                        except IndexError:
-                            proba[n].append(partial_proba[n][k])
-        except ValueError:
-            return np.zeros((r, 1))
-        except TypeError:
-            return np.zeros((r, 1))
+                    proba.append([0.0 for _ in partial_proba[n]])
 
-        # normalizing probabilities
-        sum_proba = []
-        for k in range(r):
-            sum_proba.append(np.sum(proba[k]))
-        aux = []
-        for i in range(len(proba)):
-            if sum_proba[i] > 0.:
-                aux.append([x / sum_proba[i] for x in proba[i]])
-            else:
-                aux.append(proba[i])
-        return np.asarray(aux)
+            for n in range(r):
+                for k in range(len(partial_proba[n])):
+                    try:
+                        proba[n][k] += partial_proba[n][k] / \
+                            self.actual_n_estimators
+                    except IndexError:
+                        proba[n].append(partial_proba[n][k] /
+                                        self.actual_n_estimators)
+        # except ValueError:
+        # return np.zeros((r, 1))
+        # except TypeError:
+        # return np.zeros((r, 1))
+
+        # print(proba)
+        return np.asarray(proba)

@@ -8,6 +8,7 @@ from .batch_incremental import BatchIncrementalClassifier
 from .leverage_bagging import LeveragingBaggingClassifier
 from .oza_bagging import OzaBaggingClassifier
 from .oza_bagging_adwin import OzaBaggingADWINClassifier
+from .oza_bagging_ml import OzaBaggingMLClassifier
 from .classifier_chains import ClassifierChain
 from .classifier_chains import ProbabilisticClassifierChain
 from .classifier_chains import MonteCarloClassifierChain
@@ -47,6 +48,7 @@ from .oza_bagging_adwin import OzaBaggingAdwin   # remove in v0.7.0
 
 __all__ = ["AdaptiveRandomForestClassifier", "AdaptiveRandomForestRegressor",
            "BatchIncrementalClassifier", "LeveragingBaggingClassifier", "OzaBaggingClassifier",
+           "OzaBaggingMLClassifier",
            "OzaBaggingADWINClassifier", "ClassifierChain", "ProbabilisticClassifierChain",
            "MonteCarloClassifierChain", "RegressorChain", "MultiOutputLearner",
            "LearnPPClassifier", "LearnPPNSEClassifier", "AccuracyWeightedEnsembleClassifier",
