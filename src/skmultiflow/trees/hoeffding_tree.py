@@ -421,10 +421,10 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
             else:
                 if sum(votes.values()) != 0:
                     votes = normalize_values_in_dict(votes, inplace=False)
-                if self.classes is not None:
-                    y_proba = np.zeros(int(max(self.classes)) + 1)
-                else:
-                    y_proba = np.zeros(int(max(votes.keys())) + 1)
+                # if self.classes is not None:
+                    # y_proba = np.zeros(int(max(self.classes)) + 1)
+                # else:
+                y_proba = np.zeros(int(max(votes.keys())) + 1)
                 for key, value in votes.items():
                     y_proba[int(key)] = value
                 predictions.append(y_proba)
@@ -433,7 +433,8 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
             predictions = np.asarray(predictions)
         else:
             # Fill missing values related to unobserved classes to ensure we get a 2D array
-            predictions = np.asarray(list(itertools.zip_longest(*predictions, fillvalue=0.0))).T
+            predictions = np.asarray(
+                list(itertools.zip_longest(*predictions, fillvalue=0.0))).T
         return predictions
 
     @property
@@ -582,7 +583,8 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
                 split_criterion = HellingerDistanceCriterion()
             else:
                 split_criterion = InfoGainSplitCriterion()
-            best_split_suggestions = node.get_best_split_suggestions(split_criterion, self)
+            best_split_suggestions = node.get_best_split_suggestions(
+                split_criterion, self)
             best_split_suggestions.sort(key=attrgetter('merit'))
             should_split = False
             if len(best_split_suggestions) < 2:
@@ -614,7 +616,8 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
                     # Preprune - null wins
                     self._deactivate_learning_node(node, parent, parent_idx)
                 else:
-                    new_split = self._new_split_node(split_decision.split_test, node.stats)
+                    new_split = self._new_split_node(
+                        split_decision.split_test, node.stats)
 
                     for i in range(split_decision.num_splits()):
                         new_child = self._new_learning_node(
@@ -785,7 +788,8 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
                 split_node = node
                 for i in range(split_node.n_children):
                     self.__find_learning_nodes(
-                        split_node.get_child(i), split_node, i, found, depth + 1
+                        split_node.get_child(
+                            i), split_node, i, found, depth + 1
                     )
 
     def get_model_rules(self):
@@ -808,7 +812,8 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
                     recurse(child, r, ht)
             else:
                 cur_rule.observed_class_distribution = node.stats.copy()
-                cur_rule.class_idx = max(node.stats.items(), key=itemgetter(1))[0]
+                cur_rule.class_idx = max(
+                    node.stats.items(), key=itemgetter(1))[0]
                 rules.append(cur_rule)
 
         rule = Rule()
