@@ -82,11 +82,13 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
             elif self.base_estimator._estimator_type == _REGRESSOR_TYPE:
                 self._estimator_type = _REGRESSOR_TYPE
                 return
-        warnings.warn("Unknown base-estimator type, default is classification.", RuntimeWarning)
+        warnings.warn(
+            "Unknown base-estimator type, default is classification.", RuntimeWarning)
         self._estimator_type = _CLASSIFIER_TYPE
 
     def __configure(self):
-        self.ensemble = [cp.deepcopy(self.base_estimator) for _ in range(self.n_targets)]
+        self.ensemble = [cp.deepcopy(self.base_estimator)
+                         for _ in range(self.n_targets)]
 
     def fit(self, X, y, classes=None, sample_weight=None):
         """ Fit the model.
@@ -121,7 +123,8 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
 
         for j in range(self.n_targets):
             if 'sample_weight' and 'classes' in signature(self.ensemble[j].fit).parameters:
-                self.ensemble[j].fit(X, y[:, j], classes=classes, sample_weight=sample_weight)
+                self.ensemble[j].fit(
+                    X, y[:, j], classes=classes, sample_weight=sample_weight)
             elif 'sample_weight' in signature(self.ensemble[j].fit).parameters:
                 self.ensemble[j].fit(X, y[:, j], sample_weight=sample_weight)
             else:
@@ -172,7 +175,8 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
                 self.ensemble[j].partial_fit(
                     X, y[:, j], classes=classes, sample_weight=sample_weight)
             elif 'sample_weight' in signature(self.ensemble[j].partial_fit).parameters:
-                self.ensemble[j].partial_fit(X, y[:, j], sample_weight=sample_weight)
+                self.ensemble[j].partial_fit(
+                    X, y[:, j], sample_weight=sample_weight)
             else:
                 self.ensemble[j].partial_fit(X, y[:, j])
 
@@ -228,7 +232,7 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
         proba = np.zeros((N, self.n_targets))
         for j in range(self.n_targets):
             try:
-                proba[:, j] = self.ensemble[j].predict_proba(X)[:, 1]
+                proba[:, j] = self.ensemble[j].predict_proba(X)[:, 0]
             except NotImplementedError or AttributeError:
                 raise AttributeError("Estimator {} has no predict_proba method".format(
                     type(self.base_estimator)))

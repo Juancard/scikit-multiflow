@@ -169,13 +169,13 @@ class OzaBaggingMLClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin)
                 raise ValueError("The classes passed to the partial_fit function"
                                  "differ from those passed earlier.")
 
-        self.__adjust_ensemble_size()
+        # self.__adjust_ensemble_size()
         r, _ = get_dimensions(X)
         for j in range(r):
             for i in range(self.actual_n_estimators):
                 k = self._random_state.poisson()
                 if k > 0:
-                    for b in range(k):
+                    for _ in range(k):
                         self.ensemble[i].partial_fit(
                             np.array([X[j]]),
                             np.array([y[j]]),
