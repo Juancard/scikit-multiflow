@@ -26,7 +26,7 @@ class DynamicWeightedMajorityMultiLabel(BaseSKMObject, ClassifierMixin, MetaEsti
         def __init__(self, estimator, weight, labels=1):
             self.estimator = estimator
             self.weight = np.full(
-                shape=labels, fill_value=weight, dtype=np.int)
+                shape=labels, fill_value=weight, dtype=np.float)
 
     def __init__(self, labels, n_estimators=5, base_estimator=NaiveBayes(),
                  period=50, beta=0.5, theta=0.01):
@@ -178,11 +178,7 @@ class DynamicWeightedMajorityMultiLabel(BaseSKMObject, ClassifierMixin, MetaEsti
                     self.epochs % self.period == 0
                 ):
                     exp.weight[y_pred_idx] *= self.beta
-                    # print("Label {} - New weight: {} - Weights: {}".format(
-                    # i,
-                    # exp.weight[y_pred_idx],
-                    # exp.weight
-                    # ))
+                    # print("Label {} - New weight: {} - Weights: {}".format(i, exp.weight[y_pred_idx], exp.weight))
 
                 predictions[y_pred_idx][int(
                     y_hat[y_pred_idx])] += exp.weight[y_pred_idx]
@@ -206,6 +202,7 @@ class DynamicWeightedMajorityMultiLabel(BaseSKMObject, ClassifierMixin, MetaEsti
                     # weakest_expert_index, weakest_expert_weight))
                     self.experts.pop(weakest_expert_index)
                 self.experts.append(self._construct_new_expert())
+            #print("Experts in ensemble: ", len(self.experts))
 
         # Train individual experts
         for exp in self.experts:
@@ -233,6 +230,7 @@ class DynamicWeightedMajorityMultiLabel(BaseSKMObject, ClassifierMixin, MetaEsti
         Scales the experts' weights such that the max is 1.
         """
         scale_factor = np.divide(1, max_weight)
+        #print("max_weights\n{}\nscale_facto\nr{}\n".format(max_weight, scale_factor))
         for exp in self.experts:
             exp.weight = exp.weight * scale_factor
 
