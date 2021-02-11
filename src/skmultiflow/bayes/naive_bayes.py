@@ -174,10 +174,10 @@ class NaiveBayes(BaseSKMObject, ClassifierMixin):
                 votes = do_naive_bayes_prediction(X[i], self._observed_class_distribution,
                                                   self._attribute_observers)
                 sum_values = sum(votes.values())
-                # if self._classes is not None:
-                # y_proba = np.zeros(int(max(self._classes)) + 1)
-                # else:
-                y_proba = np.zeros(int(max(votes.keys())) + 1)
+                if self._classes is not None:
+                    y_proba = np.zeros(int(max(self._classes)) + 1)
+                else:
+                    y_proba = np.zeros(int(max(votes.keys())) + 1)
                 for key, value in votes.items():
                     y_proba[int(key)] = value / \
                         sum_values if sum_values != 0 else 0.0
