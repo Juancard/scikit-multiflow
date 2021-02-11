@@ -163,7 +163,7 @@ class OzaBaggingMLClassifier(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin)
                 self.classes = classes
 
         if self.classes is not None and classes is not None:
-            if set(map(tuple, self.classes)) == set(map(tuple, classes)):
+            if set(self.classes) == set(classes):
                 pass
             else:
                 raise ValueError("The classes passed to the partial_fit function"
