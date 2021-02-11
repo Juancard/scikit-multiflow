@@ -138,7 +138,7 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         XY[:, 0:D] = X
         XY[:, D:] = y[:, 0:L - 1]
         for j in range(self.L):
-            self.ensemble[j].fit(XY[:, 0:D + j], y[:, j])
+            self.ensemble[j].fit(XY[:, 0:D + j], y[:, j], classes=classes)
         return self
 
     def partial_fit(self, X, y, classes=None, sample_weight=None):
@@ -163,7 +163,7 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         """
         if self.ensemble is None:
             # This is the first time that the model is fit
-            self.fit(X, y)
+            self.fit(X, y, classes=classes)
             return self
 
         N, self.L = y.shape
