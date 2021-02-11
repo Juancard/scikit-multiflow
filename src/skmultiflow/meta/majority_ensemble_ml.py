@@ -3,7 +3,7 @@ import numpy as np
 
 from skmultiflow.core import BaseSKMObject, ClassifierMixin, MetaEstimatorMixin
 from skmultiflow.bayes import NaiveBayes
-
+from skmultiflow.utils import check_random_state
 
 class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
     """ Majority ensemble classifier for MultiLabel data.
@@ -29,7 +29,7 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
                 shape=labels, fill_value=weight, dtype=np.float)
 
     def __init__(self, labels, n_estimators=5, base_estimators=False, base_estimator=NaiveBayes(),
-                 period=50, beta=0.5, theta=0.01):
+                 period=50, beta=0.5, theta=0.01, random_state=None, sampling=None):
         """
         Creates a new instance of MajorityEnsembleMultilabel.
         """
@@ -49,6 +49,10 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
         self.experts = None
 
         self.labels = labels
+
+        self._random_state = None  # This is the actual random_state object used internally
+        self.random_state = random_state
+        self.sampling = sampling
 
         self.reset()
 
@@ -207,7 +211,10 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
 
         # Train individual experts
         for exp in self.experts:
-            exp.estimator.partial_fit(X, y, classes, sample_weight)
+            k = self._random_state.poisson()
+            if k > 0:
+                for _ in range(k):
+                    exp.estimator.partial_fit(X, y, classes, sample_weight)
 
     def get_expert_predictions(self, X):
         """
@@ -222,6 +229,7 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
         """
         self.epochs = 0
         self.num_classes = 2    # Minimum of 2 classes
+        self._random_state = check_random_state(self.random_state)
         if self.base_estimators:
             self.experts = [
                 self.WeightedExpert(
