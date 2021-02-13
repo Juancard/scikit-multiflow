@@ -197,7 +197,8 @@ class LabelCombinationHoeffdingTreeClassifier(HoeffdingTreeClassifier, MultiOutp
         predictions = []
         y_proba = self.predict_proba(X)
         for i in range(r):
-            index = np.argmax(y_proba[i])
+            #index = np.argmax(y_proba[i])
+            index = max(y_proba[i], key=lambda key: y_proba[i][key])
             pred = str("{0:0"+str(self.n_labels)+"b}").format(index)
             pred = [int(e) for e in pred]
             predictions.append(pred)

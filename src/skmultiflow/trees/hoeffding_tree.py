@@ -421,20 +421,22 @@ class HoeffdingTreeClassifier(BaseSKMObject, ClassifierMixin):
             else:
                 if sum(votes.values()) != 0:
                     votes = normalize_values_in_dict(votes, inplace=False)
-                # if self.classes is not None:
-                    # y_proba = np.zeros(int(max(self.classes)) + 1)
-                # else:
-                y_proba = np.zeros(int(max(votes.keys())) + 1)
-                for key, value in votes.items():
-                    y_proba[int(key)] = value
-                predictions.append(y_proba)
+                # juan cardona: comment to fix bug in ml tasks
+                #if self.classes is not None:
+                #    y_proba = np.zeros(int(max(self.classes)) + 1)
+                #else:
+                #    y_proba = np.zeros(int(max(votes.keys())) + 1)
+                #for key, value in votes.items():
+                #    y_proba[int(key)] = value
+                predictions.append(votes)
         # Set result as np.array
-        if self.classes is not None:
-            predictions = np.asarray(predictions)
-        else:
-            # Fill missing values related to unobserved classes to ensure we get a 2D array
-            predictions = np.asarray(
-                list(itertools.zip_longest(*predictions, fillvalue=0.0))).T
+        # juan cardona: comment to fix bug in ml tasks
+        #if self.classes is not None:
+        #    predictions = np.asarray(predictions)
+        #else:
+        #    # Fill missing values related to unobserved classes to ensure we get a 2D array
+        #    predictions = np.asarray(
+        #        list(itertools.zip_longest(*predictions, fillvalue=0.0))).T
         return predictions
 
     @property
