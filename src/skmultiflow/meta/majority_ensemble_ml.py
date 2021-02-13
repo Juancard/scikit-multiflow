@@ -162,45 +162,31 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
         self.num_classes = max(
             len(classes) if classes is not None else 0,
             (int(np.max(y)) + 1), self.num_classes)
-        predictions = [np.zeros((self.num_classes,))
-                       for label in range(self.labels)]
-
         max_weight = [0] * self.labels
 
         # print("Epoch: ", self.epochs)
-        for i, exp in enumerate(self.experts):
-            y_hat = exp.estimator.predict(X).flatten()
-            # print("Expert {} - {}: \n\t{}".format(
-            #    i, exp.estimator, y_hat
-            # ))
-            for y_pred_idx, y_pred, in enumerate(y_hat):
-                if (
-                        int(y_hat[y_pred_idx]) != int(y[0][y_pred_idx])) and (
-                    self.epochs % self.period == 0
-                ):
-                    exp.weight[y_pred_idx] *= self.beta
-
-                predictions[y_pred_idx][int(
-                    y_hat[y_pred_idx])] += exp.weight[y_pred_idx]
-                max_weight[y_pred_idx] = max(
-                    max_weight[y_pred_idx], exp.weight[y_pred_idx])
-
-        y_hat = np.array([np.argmax(predictions, axis=1)])
         if self.epochs % self.period == 0:
-            # print("Epoch: {} - Experts weight".format(self.epochs))
-            # for idx, e in enumerate(self.experts):
-            # print(idx, ": ", e.weight)
+            for _, exp in enumerate(self.experts):
+                y_hat = exp.estimator.predict(X).flatten()
+                # print("Expert {} - {}: \n\t{}".format(
+                #    i, exp.estimator, y_hat
+                # ))
+                for y_pred_idx, _, in enumerate(y_hat):
+                    if (int(y_hat[y_pred_idx]) != int(y[0][y_pred_idx])):
+                        exp.weight[y_pred_idx] *= self.beta
+                    max_weight[y_pred_idx] = max(
+                        max_weight[y_pred_idx], exp.weight[y_pred_idx])
             self._scale_weights(max_weight)
-            # print("Experts weight - scaled")
-            # for idx, e in enumerate(self.experts):
-            # print(idx, ": ", e.weight)
 
         # Train individual experts
         for exp in self.experts:
-            k = self._random_state.poisson()
-            if k > 0:
-                for _ in range(k):
-                    exp.estimator.partial_fit(X, y, classes, sample_weight)
+            if self.sampling != "poisson":
+                exp.estimator.partial_fit(X, y, classes, sample_weight)
+            else:
+                k = self._random_state.poisson()
+                if k > 0:
+                    for _ in range(k):
+                        exp.estimator.partial_fit(X, y, classes, sample_weight)
 
     def get_expert_predictions(self, X):
         """
