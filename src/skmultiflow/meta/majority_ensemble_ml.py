@@ -5,6 +5,7 @@ from skmultiflow.core import BaseSKMObject, ClassifierMixin, MetaEstimatorMixin
 from skmultiflow.bayes import NaiveBayes
 from skmultiflow.utils import check_random_state
 
+
 class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin):
     """ Majority ensemble classifier for MultiLabel data.
     """
@@ -111,33 +112,18 @@ class MajorityEnsembleMultilabel(BaseSKMObject, ClassifierMixin, MetaEstimatorMi
         numpy.ndarray
             A numpy.ndarray with the label prediction for all the samples in X.
         """
-        original_preds = [exp.estimator.predict(X) for exp in self.experts]
-        weights = [exp.weight for exp in self.experts]
-        preds = [np.multiply(np.array(exp.estimator.predict(X)), exp.weight)
-                 for exp in self.experts]
+        preds = [np.multiply(
+            np.array(exp.estimator.predict(X)), exp.weight
+        ) for exp in self.experts]
 
-        sum_weights = [sum(exp.weight[label] for exp in self.experts)
-                       for label in range(self.labels)]
-        instances = X.shape[0]
-        aggregate = np.array([[
-            np.sum(
-                [np.array(p[i][label])
-                 for p in preds] / sum_weights[label],
-                axis=0
-            ) for label in range(self.labels)
-        ] for i in range(instances)])
+        sum_weights = np.sum(
+            [exp.weight for exp in self.experts],
+            axis=0
+        )
 
-        # Round to nearest int
-        out = (np.array(aggregate) + 0.5).astype(int)
-        # print("*" * 30)
-        # print("weights: ", weights)
-        # print("original preds: ", original_preds)
-        # print("old weighted_Preds ", preds)
-        # print("sum_weights ", sum_weights)
-        # print("Ensemble Prediction: ", out)
-        # print("*" * 30)
-
-        return out
+        return (
+            (np.sum(preds, axis=0) / sum_weights) >= .5
+        ).astype(int)
 
     def predict_proba(self, X):
         raise NotImplementedError
