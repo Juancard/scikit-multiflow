@@ -85,7 +85,7 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
     # TODO: much of this can be shared with Regressor Chains, probably should
     # use a base class to inherit here.
 
-    def __init__(self, base_estimator=LogisticRegression(), order=None, random_state=None):
+    def __init__(self, base_estimator=LogisticRegression(), order=None, random_state=None, n_targets=None):
         super().__init__()
         self.base_estimator = base_estimator
         self.order = order
@@ -93,12 +93,18 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         self.chain = None
         self.ensemble = None
         self.L = None
+        self.n_targets = n_targets
         self._random_state = None   # This is the actual random_state object used internally
+        self.first_train = True
         self.__configure()
 
     def __configure(self):
-        self.ensemble = None
-        self.L = -1
+        if self.n_targets is None:
+            self.ensemble = None
+            self.L = -1
+        else:
+            self.L = self.n_targets
+            self.ensemble = [copy.deepcopy(self.base_estimator) for _ in range(self.L)]
         self._random_state = check_random_state(self.random_state)
 
     def fit(self, X, y, classes=None, sample_weight=None):
@@ -161,9 +167,10 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         self
 
         """
-        if self.ensemble is None:
+        if self.first_train:
             # This is the first time that the model is fit
             self.fit(X, y, classes=classes)
+            self.first_train = False
             return self
 
         N, self.L = y.shape
@@ -196,6 +203,11 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         """
         N, D = X.shape
         Y = np.zeros((N, self.L))
+
+        if self.first_train:
+            # first instance in model, not yet trained
+            return Y
+
         for j in range(self.L):
             if j > 0:
                 X = np.column_stack([X, Y[:, j - 1]])
@@ -230,6 +242,11 @@ class ClassifierChain(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, MultiO
         """
         N, D = X.shape
         Y = np.zeros((N, self.L))
+
+        if self.first_train:
+            # first instance in model, not yet trained
+            return Y
+
         for j in range(self.L):
             if j > 0:
                 X = np.column_stack([X, Y[:, j - 1]])

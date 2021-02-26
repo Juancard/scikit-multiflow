@@ -67,12 +67,15 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
 
     """
 
-    def __init__(self, base_estimator=SGDClassifier(max_iter=100)):
+    def __init__(self, base_estimator=SGDClassifier(max_iter=100), n_targets=None):
         super().__init__()
         self.base_estimator = base_estimator
         self._check_estimator_type()
         self.ensemble = None
-        self.n_targets = None
+        self.n_targets = n_targets
+        self.first_train = True
+        if self.n_targets is not None:
+            self.__configure()
 
     def _check_estimator_type(self):
         if hasattr(self, "_estimator_type"):
@@ -165,6 +168,12 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
             self.fit(X=X, y=y, classes=classes, sample_weight=sample_weight)
             return self
 
+        if self.first_train:
+            # This is the first time that the model is fit
+            self.fit(X, y, classes=classes, sample_weight=sample_weight)
+            self.first_train = False
+            return self
+
         N, self.n_targets = y.shape
 
         if self.ensemble is None:
@@ -230,9 +239,14 @@ class MultiOutputLearner(BaseSKMObject, ClassifierMixin, MetaEstimatorMixin, Mul
         """
         N, D = X.shape
         proba = np.zeros((N, self.n_targets))
+
+        if self.first_train:
+            # first instance in model, not yet trained
+            return proba
+
         for j in range(self.n_targets):
             try:
-                proba[:, j] = self.ensemble[j].predict_proba(X)[:, 0]
+                proba[:, j] = self.ensemble[j].predict_proba(X)[:, 1]
             except NotImplementedError or AttributeError:
                 raise AttributeError("Estimator {} has no predict_proba method".format(
                     type(self.base_estimator)))
